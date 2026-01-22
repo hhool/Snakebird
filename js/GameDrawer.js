@@ -139,6 +139,12 @@ class GameDrawer {
     this._canvas.addEventListener('mouseup', this.mouseUp);
     this._canvas.addEventListener('mousemove', this.mouseMove);
     this._canvas.addEventListener('mouseleave', this.mouseLeave);
+    this.touchStart = this.touchStart.bind(this);
+    this.touchEnd = this.touchEnd.bind(this);
+    this._touchStartPos = null;
+    this._canvas.addEventListener('touchstart', this.touchStart, { passive: false });
+    this._canvas.addEventListener('touchend', this.touchEnd);
+    this._canvas.addEventListener('touchcancel', this.touchEnd);
     this.draw();
   }
 
@@ -316,6 +322,39 @@ class GameDrawer {
       this._translate(event.clientX, event.clientY);
     }
     this._mouseIsDown = false;
+  }
+
+  /**
+   * Touch start handler for swipe detection
+   * @param {TouchEvent} event
+   */
+  touchStart(event) {
+    if (this._isShutDown) return;
+    const t = (event.touches && event.touches[0]) || event;
+    this._touchStartPos = [t.clientX, t.clientY];
+  }
+
+  /**
+   * Touch end handler for swipe detection
+   * @param {TouchEvent} event
+   */
+  touchEnd(event) {
+    if (this._isShutDown) return;
+    if (!this._touchStartPos) return;
+    const t = (event.changedTouches && event.changedTouches[0]) || event;
+    const dx = t.clientX - this._touchStartPos[0];
+    const dy = t.clientY - this._touchStartPos[1];
+    const absdx = Math.abs(dx), absdy = Math.abs(dy);
+    const TH = 30; // minimum swipe distance in px
+    this._touchStartPos = null;
+    if (Math.max(absdx, absdy) < TH) return;
+    let dir = null;
+    if (absdx > absdy) dir = dx > 0 ? RIGHT : LEFT;
+    else dir = dy > 0 ? DOWN : UP;
+    if (this._gameBoard && typeof this._gameBoard.performMove === 'function') {
+      this._gameBoard.performMove(dir);
+    }
+    if (event.preventDefault) event.preventDefault();
   }
 
   /**

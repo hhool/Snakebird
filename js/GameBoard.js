@@ -667,6 +667,24 @@ class GameBoard {
   }
 
   /**
+   * Perform a move in the given direction programmatically (used by touch/swipe handlers)
+   * @param {number[]} direction the direction of the movement (LEFT, RIGHT, UP or DOWN)
+   */
+  performMove(direction) {
+    if (this._isShutDown) return;
+    if (this._noOps) return;
+    const oldState = this._state.toString();
+    this._state = this._drawer.tryMove(this._activeSnake, direction) || this._state;
+    if (oldState !== this._state.toString()) {
+      while (this._stateStackIdx != this._stateStack.length - 1) this._stateStack.pop();
+      this._stateStackIdx++;
+      this._stateStack.push( this._state.clone() );
+      this.moveCounter++;
+      this.drawForeground();
+    }
+  }
+
+  /**
    * Should be called when the menu is closed
    */
   menuClosed() {
