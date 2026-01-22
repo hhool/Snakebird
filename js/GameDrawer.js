@@ -140,9 +140,11 @@ class GameDrawer {
     this._canvas.addEventListener('mousemove', this.mouseMove);
     this._canvas.addEventListener('mouseleave', this.mouseLeave);
     this.touchStart = this.touchStart.bind(this);
+    this.touchMove = this.touchMove.bind(this);
     this.touchEnd = this.touchEnd.bind(this);
     this._touchStartPos = null;
     this._canvas.addEventListener('touchstart', this.touchStart, { passive: false });
+    this._canvas.addEventListener('touchmove', this.touchMove, { passive: false });
     this._canvas.addEventListener('touchend', this.touchEnd);
     this._canvas.addEventListener('touchcancel', this.touchEnd);
     this.draw();
@@ -355,6 +357,23 @@ class GameDrawer {
       this._gameBoard.performMove(dir);
     }
     if (event.preventDefault) event.preventDefault();
+  }
+
+  /**
+   * Touch move handler to block browser pull-to-refresh on downward swipes
+   * @param {TouchEvent} event
+   */
+  touchMove(event) {
+    if (this._isShutDown) return;
+    if (!this._touchStartPos) return;
+    const t = (event.touches && event.touches[0]) || event;
+    const dx = t.clientX - this._touchStartPos[0];
+    const dy = t.clientY - this._touchStartPos[1];
+    const absdx = Math.abs(dx), absdy = Math.abs(dy);
+    // If vertical downward swipe dominates, prevent default to stop pull-to-refresh
+    if (absdy > absdx && dy > 0) {
+      if (event.preventDefault) event.preventDefault();
+    }
   }
 
   /**
