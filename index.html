@@ -247,7 +247,15 @@
       document.addEventListener('wheel', function(e){ if (e.ctrlKey) e.preventDefault(); }, {passive:false});
       // prevent double-tap zoom by disabling double click zoom behavior
       let lastTouch = 0;
-      document.addEventListener('touchend', function(e){ const now = Date.now(); if (now - lastTouch <= 300) e.preventDefault(); lastTouch = now; }, {passive:false});
+      document.addEventListener('touchend', function(e){ 
+        const now = Date.now(); 
+        if (now - lastTouch <= 300) {
+          // Don't prevent if the target is a button (for back-to-menu etc.)
+          if (e.target && e.target.tagName === 'BUTTON') return;
+          e.preventDefault(); 
+        }
+        lastTouch = now; 
+      }, {passive:false});
     })();
   </script>
  </body>

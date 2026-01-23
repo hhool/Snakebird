@@ -407,6 +407,11 @@ class GameDrawer {
     if (this._isShutDown) return;
     if ((new Date()).getTime() - this._mouseDownTime >= 250) {
       this._translate(event.clientX, event.clientY);
+    } else {
+      // Short click, handle as canvas click
+      if (this._gameBoard && typeof this._gameBoard.canvasClick === 'function') {
+        this._gameBoard.canvasClick(event.clientX, event.clientY);
+      }
     }
     this._mouseIsDown = false;
   }
@@ -460,7 +465,13 @@ class GameDrawer {
     const absdx = Math.abs(dx), absdy = Math.abs(dy);
     const TH = 30; // minimum swipe distance in px
     this._touchStartPos = null; this._touchIsDown = false;
-    if (Math.max(absdx, absdy) < TH) return;
+    if (Math.max(absdx, absdy) < TH) {
+      // Tap, handle as canvas click
+      if (this._gameBoard && typeof this._gameBoard.canvasClick === 'function') {
+        this._gameBoard.canvasClick(t.clientX, t.clientY);
+      }
+      return;
+    }
     let dir = null;
     if (absdx > absdy) dir = dx > 0 ? RIGHT : LEFT;
     else dir = dy > 0 ? DOWN : UP;

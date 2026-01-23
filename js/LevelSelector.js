@@ -704,7 +704,16 @@ class LevelSelector {
     btn.style.border = 'none';
     btn.style.fontFamily = 'Fredoka One, sans-serif';
     btn.style.fontSize = '14px';
-    btn.addEventListener('click', () => this.returnToMainMenu());
+    btn.style.cursor = 'pointer';
+    btn.addEventListener('click', (e) => {
+      console.log('Back button clicked');
+      this.returnToMainMenu();
+    });
+    btn.addEventListener('touchend', (e) => {
+      console.log('Back button touched');
+      e.preventDefault();
+      this.returnToMainMenu();
+    });
     document.body.appendChild(btn);
     this._backButton = btn;
   }
