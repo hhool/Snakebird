@@ -85,5 +85,149 @@
  </head>
  <body onLoad="main();">
   
+  <div id="dump-ui-root">
+    <button id="dump-styles-btn" aria-label="Dump styles">Dump styles</button>
+    <div id="dump-overlay" role="dialog" aria-hidden="true">
+      <div id="dump-panel">
+        <div id="dump-panel-head">
+          <strong>Page styles dump</strong>
+          <button id="dump-close">Close</button>
+        </div>
+        <textarea id="dump-json" readonly></textarea>
+        <div id="dump-panel-foot">
+          <button id="dump-copy">Copy JSON</button>
+          <button id="dump-download">Download</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <style>
+    #dump-styles-btn{position:fixed;right:8px;top:8px;z-index:99999;padding:6px 10px;background:#1e88e5;color:#fff;border:0;border-radius:6px;font-size:13px}
+    #dump-overlay{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,0.5);z-index:99998}
+    #dump-overlay[aria-hidden="false"]{display:flex}
+    #dump-panel{width:min(980px,95%);height:min(600px,80%);background:#fff;border-radius:8px;box-shadow:0 6px 24px rgba(0,0,0,0.3);display:flex;flex-direction:column;overflow:hidden}
+    #dump-panel-head{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid #eee}
+    #dump-json{flex:1;padding:12px;border:0;width:100%;resize:none;font-family:monospace;font-size:12px}
+    #dump-panel-foot{display:flex;gap:8px;padding:10px;justify-content:flex-end;border-top:1px solid #eee}
+    #dump-panel button{padding:6px 10px;border-radius:6px;border:0;background:#1976d2;color:#fff}
+  </style>
+
+  <script>
+    (function(){
+      function isDumpEnabled(){
+        try{
+          const params = new URLSearchParams(location.search);
+          if(params.get('dump') === '1') return true;
+          if(location.hash && location.hash.indexOf('dump') !== -1) return true;
+        }catch(e){ }
+        return false;
+      }
+
+      // If not enabled, hide the dump UI root and skip wiring the handlers.
+      if(!isDumpEnabled()){
+        const root = document.getElementById('dump-ui-root');
+        if(root) root.style.display = 'none';
+        return;
+      }
+
+      const btn = document.getElementById('dump-styles-btn');
+      const overlay = document.getElementById('dump-overlay');
+      const ta = document.getElementById('dump-json');
+      const closeBtn = document.getElementById('dump-close');
+      const copyBtn = document.getElementById('dump-copy');
+      const dlBtn = document.getElementById('dump-download');
+
+      function serializeEl(el){
+        if(!el) return null;
+        const cs = window.getComputedStyle(el);
+        const rect = el.getBoundingClientRect();
+        return {
+          tag: el.tagName,
+          id: el.id || null,
+          classes: Array.from(el.classList || []),
+          transform: cs.transform || 'none',
+          position: cs.position || 'static',
+          width: cs.width || rect.width + 'px',
+          height: cs.height || rect.height + 'px',
+          overflow: cs.overflow || '',
+          display: cs.display || '',
+          willChange: cs.willChange || '',
+          rect: { left: Math.round(rect.left), top: Math.round(rect.top), width: Math.round(rect.width), height: Math.round(rect.height) }
+        };
+      }
+
+      function ancestorsInfo(el){
+        const arr = [];
+        let cur = el.parentElement;
+        while(cur){
+          arr.push(serializeEl(cur));
+          if(cur.tagName === 'BODY') break;
+          cur = cur.parentElement;
+        }
+        return arr;
+      }
+
+      function collect(){
+        const canvases = Array.from(document.querySelectorAll('canvas')).map(c => {
+          return { info: serializeEl(c), ancestors: ancestorsInfo(c) };
+        });
+        const wrapper = document.getElementById('app-scale-wrapper');
+        const levelSel = document.querySelector('.lvl-sel-outer-container');
+        const levelMenu = document.querySelector('.lvl-menu-outer-container');
+        const data = {
+          canvases: canvases.map(c=>c.info),
+          wrapper: { info: serializeEl(wrapper), ancestors: wrapper ? ancestorsInfo(wrapper) : [] },
+          body: serializeEl(document.body),
+          levelSelector: { info: serializeEl(levelSel), ancestors: levelSel ? ancestorsInfo(levelSel) : [] },
+          levelMenu: { info: serializeEl(levelMenu), ancestors: levelMenu ? ancestorsInfo(levelMenu) : [] },
+          viewport: { innerWidth: window.innerWidth, innerHeight: window.innerHeight, dpr: window.devicePixelRatio || 1 },
+          userAgent: navigator.userAgent
+        };
+        return data;
+      }
+
+      function showDump(){
+        const data = collect();
+        ta.value = JSON.stringify(data, null, 2);
+        overlay.setAttribute('aria-hidden','false');
+        ta.focus();
+      }
+
+      function hideDump(){ overlay.setAttribute('aria-hidden','true'); }
+
+      async function copyDump(){
+        const text = ta.value;
+        try{
+          if(navigator.clipboard && navigator.clipboard.writeText){
+            await navigator.clipboard.writeText(text);
+          } else {
+            ta.select();
+            document.execCommand('copy');
+            window.getSelection().removeAllRanges();
+          }
+          copyBtn.textContent = 'Copied';
+          setTimeout(()=>copyBtn.textContent='Copy JSON',1200);
+        }catch(e){
+          copyBtn.textContent = 'Copy failed';
+          setTimeout(()=>copyBtn.textContent='Copy JSON',1200);
+        }
+      }
+
+      function downloadDump(){
+        const blob = new Blob([ta.value], {type:'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = 'dump.json';
+        document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      }
+
+      btn.addEventListener('click', showDump);
+      closeBtn.addEventListener('click', hideDump);
+      copyBtn.addEventListener('click', copyDump);
+      dlBtn.addEventListener('click', downloadDump);
+      overlay.addEventListener('click', (e)=>{ if(e.target===overlay) hideDump(); });
+    })();
+  </script>
  </body>
 </html>
