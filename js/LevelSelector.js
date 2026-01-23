@@ -416,6 +416,34 @@ class LevelSelector {
       + 'See <a target="_blank" href="https://github.com/thejoshwolfe/snakefall/wiki">github.com/thejoshwolfe/snakefall</a> for details';
     this._containerDiv.appendChild(explDivCreds3);
 
+    // Back-to-top button (left-bottom) for homepage
+    const topBtn = document.createElement('button');
+    topBtn.textContent = '↑ Top';
+    topBtn.setAttribute('class', 'lvl-back-to-top');
+    topBtn.style.position = 'fixed';
+    topBtn.style.left = '8px';
+    topBtn.style.bottom = '8px';
+    topBtn.style.zIndex = '2147483646';
+    topBtn.style.padding = '8px 10px';
+    topBtn.style.borderRadius = '6px';
+    topBtn.style.border = 'none';
+    topBtn.style.background = '#1976d2';
+    topBtn.style.color = '#fff';
+    topBtn.style.fontFamily = 'Fredoka One, sans-serif';
+    topBtn.style.fontSize = '13px';
+    topBtn.addEventListener('click', () => { try { this._parentDiv.scrollTo({top:0, left:0, behavior:'smooth'}); } catch(e){ this._parentDiv.scrollTop = 0; } });
+    // initial visibility: hide when at top
+    topBtn.style.display = (this._parentDiv.scrollTop && this._parentDiv.scrollTop > 20) ? '' : 'none';
+    // show/hide on scroll
+    this._parentDiv.addEventListener('scroll', () => {
+      try {
+        if (this._parentDiv.scrollTop > 20) topBtn.style.display = '';
+        else topBtn.style.display = 'none';
+      } catch (e) {}
+    }, { passive: true });
+    this._parentDiv.appendChild(topBtn);
+    this._scrollTopBtn = topBtn;
+
     this._menuParentDiv.innerHTML = '';
     this._menuContainerDiv = document.createElement('div');
     this._menuParentDiv.appendChild(this._menuContainerDiv);
