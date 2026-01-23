@@ -189,6 +189,7 @@ class LevelSelector {
     this._parent.appendChild(this._menuParentDiv);
 
     this._returnToLevelEditor = false;
+    this._backButton = null;
     window.addEventListener('resize', this.resize);
     this._cGameBoard = null;
     this._lvlEditor = null;
@@ -562,6 +563,7 @@ class LevelSelector {
       (initialState, currentState, fallThrough, changeGravity, options) =>
         this.openMenu(initialState, currentState, fallThrough, changeGravity, options));
     this._returnToLevelEditor = false;
+    this._createBackButton();
   }
 
   /**
@@ -589,6 +591,7 @@ class LevelSelector {
       (initialState, currentState, fallThrough, changeGravity, options) =>
         this.openMenu(initialState, currentState, fallThrough, changeGravity, options));
     this._returnToLevelEditor = true;
+    this._createBackButton();
   }
 
   /**
@@ -651,10 +654,37 @@ class LevelSelector {
     this._parentDiv.style.display = 'block';
     if (this._cGameBoard != null) this._cGameBoard.shutDown();
     this._cGameBoard = null;
+    this._removeBackButton();
     if (this._returnToLevelEditor) {
       this.openEditor();
       this._returnToLevelEditor = false;
     }
+  }
+
+  _createBackButton() {
+    if (this._backButton) return;
+    const btn = document.createElement('button');
+    btn.textContent = '← Menu';
+    btn.style.position = 'fixed';
+    btn.style.left = '8px';
+    btn.style.top = '8px';
+    btn.style.zIndex = '2147483647';
+    btn.style.padding = '6px 10px';
+    btn.style.borderRadius = '6px';
+    btn.style.background = '#1e88e5';
+    btn.style.color = '#fff';
+    btn.style.border = 'none';
+    btn.style.fontFamily = 'Fredoka One, sans-serif';
+    btn.style.fontSize = '14px';
+    btn.addEventListener('click', () => this.returnToMainMenu());
+    document.body.appendChild(btn);
+    this._backButton = btn;
+  }
+
+  _removeBackButton() {
+    if (!this._backButton) return;
+    try { this._backButton.remove(); } catch (e) { if (this._backButton.parentNode) this._backButton.parentNode.removeChild(this._backButton); }
+    this._backButton = null;
   }
 
   /**
