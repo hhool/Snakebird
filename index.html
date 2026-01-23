@@ -2,6 +2,7 @@
 <html>
  <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>
    Snakebird
   </title>
@@ -80,7 +81,13 @@
   <link rel="stylesheet" type="text/css" href="css/level-selector.css" />
   <link rel="stylesheet" type="text/css" href="css/mf-file-selector.css" />
   <style type="text/css">
-   
+     /* Only disable default touch gestures on the game canvas so the app handles drag/pan there.
+       Allow the level-selector overlay to receive normal single-finger pan/scrolls while
+       multi-finger gestures are still blocked by JS. */
+     canvas { touch-action: none; -ms-touch-action: none; }
+     .lvl-sel-outer-container { touch-action: pan-y; }
+    /* ensure no accidental text selection or zoom on double-tap */
+    html, body { -webkit-user-select: none; user-select: none; }
   </style>
  </head>
  <body onLoad="main();">
@@ -227,6 +234,20 @@
       copyBtn.addEventListener('click', copyDump);
       dlBtn.addEventListener('click', downloadDump);
       overlay.addEventListener('click', (e)=>{ if(e.target===overlay) hideDump(); });
+    })();
+  </script>
+  <script>
+    // Prevent pinch-to-zoom and gesture zooming
+    (function(){
+      // prevent multi-touch (pinch) default
+      document.addEventListener('touchstart', function(e){ if (e.touches && e.touches.length > 1) e.preventDefault(); }, {passive:false});
+      // prevent gesture events (iOS)
+      document.addEventListener('gesturestart', function(e){ e.preventDefault(); });
+      // prevent ctrl+wheel zoom on desktop
+      document.addEventListener('wheel', function(e){ if (e.ctrlKey) e.preventDefault(); }, {passive:false});
+      // prevent double-tap zoom by disabling double click zoom behavior
+      let lastTouch = 0;
+      document.addEventListener('touchend', function(e){ const now = Date.now(); if (now - lastTouch <= 300) e.preventDefault(); lastTouch = now; }, {passive:false});
     })();
   </script>
  </body>

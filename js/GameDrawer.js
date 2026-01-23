@@ -142,11 +142,96 @@ class GameDrawer {
     this.touchStart = this.touchStart.bind(this);
     this.touchMove = this.touchMove.bind(this);
     this.touchEnd = this.touchEnd.bind(this);
+    this.pointerStart = this.pointerStart.bind(this);
+    this.pointerMove = this.pointerMove.bind(this);
+    this.pointerEnd = this.pointerEnd.bind(this);
     this._touchStartPos = null;
     this._canvas.addEventListener('touchstart', this.touchStart, { passive: false });
     this._canvas.addEventListener('touchmove', this.touchMove, { passive: false });
     this._canvas.addEventListener('touchend', this.touchEnd);
     this._canvas.addEventListener('touchcancel', this.touchEnd);
+    // Pointer events fallback (some WebViews/browsers prefer pointer events)
+    this._canvas.addEventListener('pointerdown', this.pointerStart);
+    this._canvas.addEventListener('pointermove', this.pointerMove);
+    this._canvas.addEventListener('pointerup', this.pointerEnd);
+    this._canvas.addEventListener('pointercancel', this.pointerEnd);
+    // Document-level fallback: if touch/pointer events are intercepted by overlays, still handle
+    // touches that start inside the canvas bounding rect.
+    this._docTouchStart = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.touchstart', e.touches && e.touches.length);
+        const t = (e.touches && e.touches[0]);
+        if (!t) return;
+        const r = this._canvas.getBoundingClientRect();
+        if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom) {
+          this.touchStart({ touches: [t], preventDefault: e.preventDefault && e.preventDefault.bind(e), target: this._canvas });
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docTouchMove = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.touchmove', e.touches && e.touches.length);
+        const t = (e.touches && e.touches[0]);
+        if (!t) return;
+        const r = this._canvas.getBoundingClientRect();
+        if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom) {
+          this.touchMove({ touches: [t], preventDefault: e.preventDefault && e.preventDefault.bind(e) });
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docTouchEnd = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.touchend', e.changedTouches && e.changedTouches.length);
+        const t = (e.changedTouches && e.changedTouches[0]);
+        if (!t) return;
+        const r = this._canvas.getBoundingClientRect();
+        if (t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom) {
+          this.touchEnd({ changedTouches: [t], preventDefault: e.preventDefault && e.preventDefault.bind(e) });
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docPointerDown = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.pointerdown', e.pointerType, e.clientX, e.clientY);
+        if (e.pointerType !== 'touch') return;
+        const r = this._canvas.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          this.pointerStart(e);
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docPointerMove = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.pointermove', e.pointerType, e.clientX, e.clientY);
+        if (e.pointerType !== 'touch') return;
+        const r = this._canvas.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          this.pointerMove(e);
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docPointerUp = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.pointerup', e.pointerType, e.clientX, e.clientY);
+        if (e.pointerType !== 'touch') return;
+        const r = this._canvas.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          this.pointerEnd(e);
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    document.addEventListener('touchstart', this._docTouchStart, { passive: false });
+    document.addEventListener('touchmove', this._docTouchMove, { passive: false });
+    document.addEventListener('touchend', this._docTouchEnd);
+    document.addEventListener('pointerdown', this._docPointerDown);
+    document.addEventListener('pointermove', this._docPointerMove);
+    document.addEventListener('pointerup', this._docPointerUp);
     this.draw();
   }
 
@@ -333,7 +418,27 @@ class GameDrawer {
   touchStart(event) {
     if (this._isShutDown) return;
     const t = (event.touches && event.touches[0]) || event;
+    if (window && window.console && window.console.debug) console.debug('GameDrawer.touchStart', t.clientX, t.clientY, event.target && event.target.tagName);
+    // Prefer top-level event.target (used by document-level forwarders) when determining start
+    const touchTarget = event.target || (event.touches && event.touches[0] && event.touches[0].target) ||
+      (event.changedTouches && event.changedTouches[0] && event.changedTouches[0].target) || null;
+    try {
+      if (touchTarget && touchTarget.closest && !touchTarget.closest('canvas')) return;
+    } catch (ex) {}
     this._touchStartPos = [t.clientX, t.clientY];
+    this._touchStartTime = (new Date()).getTime();
+    this._touchIsDown = true;
+    this._isPanning = false;
+    this._lastMouseCoords = [t.clientX, t.clientY];
+  }
+
+  pointerStart(event) {
+    if (event.pointerType !== 'touch') return;
+    // wrap pointer event as touch-like for reuse
+    const t = { clientX: event.clientX, clientY: event.clientY, target: event.target };
+    try { this._canvas.setPointerCapture && this._canvas.setPointerCapture(event.pointerId); } catch (e) {}
+    if (window && window.console && window.console.debug) console.debug('GameDrawer.pointerStart', event.pointerId, event.clientX, event.clientY, event.target && event.target.tagName);
+    this.touchStart({ touches: [t], preventDefault: event.preventDefault.bind(event) });
   }
 
   /**
@@ -344,19 +449,34 @@ class GameDrawer {
     if (this._isShutDown) return;
     if (!this._touchStartPos) return;
     const t = (event.changedTouches && event.changedTouches[0]) || event;
+    // If we were panning, stop panning
+    if (this._isPanning) {
+      this._isPanning = false;
+    }
+    const now = (new Date()).getTime();
+    const duration = now - (this._touchStartTime || 0);
     const dx = t.clientX - this._touchStartPos[0];
     const dy = t.clientY - this._touchStartPos[1];
     const absdx = Math.abs(dx), absdy = Math.abs(dy);
     const TH = 30; // minimum swipe distance in px
-    this._touchStartPos = null;
+    this._touchStartPos = null; this._touchIsDown = false;
     if (Math.max(absdx, absdy) < TH) return;
     let dir = null;
     if (absdx > absdy) dir = dx > 0 ? RIGHT : LEFT;
     else dir = dy > 0 ? DOWN : UP;
+    if (window && window.console && window.console.debug) console.debug('GameDrawer.touchEnd computed', dx, dy, dir);
     if (this._gameBoard && typeof this._gameBoard.performMove === 'function') {
       this._gameBoard.performMove(dir);
     }
     if (event.preventDefault) event.preventDefault();
+  }
+
+  pointerEnd(event) {
+    if (event.pointerType !== 'touch') return;
+    try { this._canvas.releasePointerCapture && this._canvas.releasePointerCapture(event.pointerId); } catch (e) {}
+    const t = { clientX: event.clientX, clientY: event.clientY };
+    if (window && window.console && window.console.debug) console.debug('GameDrawer.pointerEnd', event.pointerId, event.clientX, event.clientY);
+    this.touchEnd({ changedTouches: [t], preventDefault: event.preventDefault.bind(event) });
   }
 
   /**
@@ -367,13 +487,37 @@ class GameDrawer {
     if (this._isShutDown) return;
     if (!this._touchStartPos) return;
     const t = (event.touches && event.touches[0]) || event;
+    if (window && window.console && window.console.debug) console.debug('GameDrawer.touchMove', t.clientX, t.clientY);
     const dx = t.clientX - this._touchStartPos[0];
     const dy = t.clientY - this._touchStartPos[1];
     const absdx = Math.abs(dx), absdy = Math.abs(dy);
-    // If vertical downward swipe dominates, prevent default to stop pull-to-refresh
+    // If movement exceeds threshold and the touch lasted a short while, start panning.
+    // This avoids small/quick swipes being interpreted as pan (which would cancel swipe moves).
+    const PAN_THRESHOLD = 8;
+    const PAN_START_DELAY = 10000; // ms - effectively disable pan for touch, treat all as swipes
+    const touchDuration = (new Date()).getTime() - (this._touchStartTime || 0);
+    if (!this._isPanning && Math.max(absdx, absdy) > PAN_THRESHOLD && touchDuration > PAN_START_DELAY) {
+      this._isPanning = true;
+    }
+    if (this._isPanning) {
+      // perform pan: translate using lastMouseCoords -> current
+      if (this._lastMouseCoords) {
+        this._translate(t.clientX, t.clientY);
+      }
+      this._lastMouseCoords = [t.clientX, t.clientY];
+      if (event.preventDefault) event.preventDefault();
+      return;
+    }
+    // short swipe in vertical direction: prevent default to stop pull-to-refresh
     if (absdy > absdx && dy > 0) {
       if (event.preventDefault) event.preventDefault();
     }
+  }
+
+  pointerMove(event) {
+    if (event.pointerType !== 'touch') return;
+    const t = { clientX: event.clientX, clientY: event.clientY, touches: [{ clientX: event.clientX, clientY: event.clientY }] };
+    this.touchMove(t);
   }
 
   /**
@@ -1142,5 +1286,15 @@ class GameDrawer {
    */
   shutDown() {
     this._isShutDown = true;
+    try {
+      document.removeEventListener('touchstart', this._docTouchStart, { passive: false });
+    } catch (e) {}
+    try {
+      document.removeEventListener('touchmove', this._docTouchMove, { passive: false });
+    } catch (e) {}
+    try { document.removeEventListener('touchend', this._docTouchEnd); } catch (e) {}
+    try { document.removeEventListener('pointerdown', this._docPointerDown); } catch (e) {}
+    try { document.removeEventListener('pointermove', this._docPointerMove); } catch (e) {}
+    try { document.removeEventListener('pointerup', this._docPointerUp); } catch (e) {}
   }
 }

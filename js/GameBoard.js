@@ -672,8 +672,12 @@ class GameBoard {
    */
   performMove(direction) {
     if (this._isShutDown) return;
-    if (this._noOps) return;
+    if (this._noOps) {
+      if (window && window.console && window.console.debug) console.debug('GameBoard.performMove blocked: _noOps true');
+      return;
+    }
     const oldState = this._state.toString();
+    if (window && window.console && window.console.debug) console.debug('GameBoard.performMove', direction);
     this._state = this._drawer.tryMove(this._activeSnake, direction) || this._state;
     if (oldState !== this._state.toString()) {
       while (this._stateStackIdx != this._stateStack.length - 1) this._stateStack.pop();
