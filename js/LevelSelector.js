@@ -323,7 +323,8 @@ class LevelSelector {
       table.setAttribute('class', 'lvl-sel-collection');
       // Stabilize columns on small viewports: explicit colgroup for 1 level column + 4 icon columns
       const colgroup = document.createElement('colgroup');
-      colgroup.innerHTML = '<col style="width:auto" /><col style="width:3.5em" /><col style="width:3.5em" /><col style="width:3.5em" /><col style="width:3.5em" />';
+      // First (level) column 50%, remaining four icon columns share 50%
+      colgroup.innerHTML = '<col style="width:50%" /><col style="width:12.5%" /><col style="width:12.5%" /><col style="width:12.5%" /><col style="width:12.5%" />';
       table.appendChild(colgroup);
       table.style.width = 'min(100%, 92vw)';
       table.style.tableLayout = 'fixed';
