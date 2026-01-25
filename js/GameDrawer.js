@@ -370,21 +370,32 @@ class GameDrawer {
   click(event) {
     if (this._isShutDown) return;
     if ((new Date()).getTime() - this._mouseDownTime < 250) {
-      if (!this._animationRunning) {
-        let [xp, yp] = [event.clientX, event.clientY];
-        const [w, h, ax, ay, bSize, bCoord] = this.getDimVars();
-        const [cenx, ceny] = [ax + 0.5 * w, ay + 0.5 * h];
-        xp -= cenx; yp -= ceny; xp /= this._zoomLevel * w; yp /= this._zoomLevel * h;
-        xp += this._centerCoords[0]; yp += this._centerCoords[1];
-        if (xp >= 0 && yp >= 0 && xp < 1 && yp < 1) {
-          const [xb, yb] = [Math.floor(w * xp / bSize), Math.floor(h * yp / bSize)];
-          for (let i=0; i<this._clickListeners.length; i++) {
-            this._clickListeners[i](xb, yb);
-          }
+      this._processClick(event.clientX, event.clientY);
+    }
+  }
+
+  /**
+   * Internal helper: process a click/tap at client coordinates and notify listeners
+   * @param {number} clientX
+   * @param {number} clientY
+   */
+  _processClick(clientX, clientY) {
+    if (this._isShutDown) return;
+    if (!this._animationRunning) {
+      let [xp, yp] = [clientX, clientY];
+      const [w, h, ax, ay, bSize, bCoord] = this.getDimVars();
+      const [cenx, ceny] = [ax + 0.5 * w, ay + 0.5 * h];
+      xp -= cenx; yp -= ceny; xp /= this._zoomLevel * w; yp /= this._zoomLevel * h;
+      xp += this._centerCoords[0]; yp += this._centerCoords[1];
+      if (xp >= 0 && yp >= 0 && xp < 1 && yp < 1) {
+        const [xb, yb] = [Math.floor(w * xp / bSize), Math.floor(h * yp / bSize)];
+        for (let i=0; i<this._clickListeners.length; i++) {
+          try { this._clickListeners[i](xb, yb); } catch (ex) {}
         }
       }
-      for (let i=0; i<this._absoluteClickListeners.length; i++)
-        this._absoluteClickListeners[i](event.clientX, event.clientY);
+    }
+    for (let i=0; i<this._absoluteClickListeners.length; i++) {
+      try { this._absoluteClickListeners[i](clientX, clientY); } catch (ex) {}
     }
   }
 
@@ -466,10 +477,8 @@ class GameDrawer {
     const TH = 30; // minimum swipe distance in px
     this._touchStartPos = null; this._touchIsDown = false;
     if (Math.max(absdx, absdy) < TH) {
-      // Tap, handle as canvas click
-      if (this._gameBoard && typeof this._gameBoard.canvasClick === 'function') {
-        this._gameBoard.canvasClick(t.clientX, t.clientY);
-      }
+      // Tap, handle as canvas click (process click listeners and absolute click)
+      this._processClick(t.clientX, t.clientY);
       return;
     }
     let dir = null;

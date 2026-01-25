@@ -237,9 +237,12 @@ class GameBoard {
       this._canvasArr[i].style.top = '0px';
       this._canvasArr[i].width = this._width;
       this._canvasArr[i].height = this._height;
-      this._canvasArr[i].style.zIndex = i;
-      if (i == 2)
-        this._canvasArr[i].style.pointerEvents = 'none';
+      // Ensure canvases receive touch/clicks on mobile: keep pointer-events enabled
+      this._canvasArr[i].style.pointerEvents = (i === 2) ? 'none' : 'auto';
+      // Raise z-index so the game canvas is above overlays that might block touches
+      this._canvasArr[i].style.zIndex = 1000 + i;
+      // Disable default touch handling on the canvas to ensure our touch listeners run
+      this._canvasArr[i].style.touchAction = 'none';
       this._parent.appendChild(this._canvasArr[i]);
     }
     this._drawer = new GameDrawer(this._canvasArr[1], 0, INFO_LINE_HEIGHT, this._width,
