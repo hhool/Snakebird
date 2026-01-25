@@ -166,30 +166,37 @@ class LevelSelector {
     this._hasMyLevels = false;
 
     this._parentDiv = document.createElement('div');
-    this._parentDiv.style.position = 'absolute';
-    this._parentDiv.style.left = '0px';
-    this._parentDiv.style.top = '0px';
+    this._parentDiv.style.position = 'fixed';
+    this._parentDiv.style.left = '0';
+    this._parentDiv.style.top = '0';
+    this._parentDiv.style.right = '0';
+    this._parentDiv.style.bottom = '0';
+    this._parentDiv.style.width = '100%';
+    this._parentDiv.style.height = '100%';
     this._parentDiv.style.zIndex = '10';
     this._parentDiv.style.backgroundColor = 'rgba(255, 255, 255, 1)';
     this._parentDiv.style.overflow = 'auto';
     this._parentDiv.style.fontFamily = '\'Fredoka One\'';
     this._parentDiv.setAttribute('class', 'lvl-sel-outer-container');
-    this._parent.appendChild(this._parentDiv);
+    document.body.appendChild(this._parentDiv);
 
     this._menuParentDiv = document.createElement('div');
-    this._menuParentDiv.style.position = 'absolute';
-    this._menuParentDiv.style.left = '0px';
-    this._menuParentDiv.style.top = '0px';
+    this._menuParentDiv.style.position = 'fixed';
+    this._menuParentDiv.style.left = '0';
+    this._menuParentDiv.style.top = '0';
+    this._menuParentDiv.style.right = '0';
+    this._menuParentDiv.style.bottom = '0';
+    this._menuParentDiv.style.width = '100%';
+    this._menuParentDiv.style.height = '100%';
     this._menuParentDiv.style.zIndex = '11';
     this._menuParentDiv.style.backgroundImage = 'linear-gradient(rgba(255, 255, 255, 1) 10%, rgba(255, 255, 255, 0) 90%)';
     this._menuParentDiv.style.overflow = 'auto';
     this._menuParentDiv.style.fontFamily = '\'Fredoka One\'';
     this._menuParentDiv.style.display = 'none';
     this._menuParentDiv.setAttribute('class', 'lvl-menu-outer-container');
-    this._parent.appendChild(this._menuParentDiv);
+    document.body.appendChild(this._menuParentDiv);
 
     this._returnToLevelEditor = false;
-    this._backButton = null;
     window.addEventListener('resize', this.resize);
     this._cGameBoard = null;
     this._lvlEditor = null;
@@ -314,6 +321,13 @@ class LevelSelector {
       this._containerDiv.appendChild(h2);
       const table = document.createElement('table');
       table.setAttribute('class', 'lvl-sel-collection');
+      // Stabilize columns on small viewports: explicit colgroup for 1 level column + 4 icon columns
+      const colgroup = document.createElement('colgroup');
+      colgroup.innerHTML = '<col style="width:auto" /><col style="width:3.5em" /><col style="width:3.5em" /><col style="width:3.5em" /><col style="width:3.5em" />';
+      table.appendChild(colgroup);
+      table.style.width = 'min(100%, 92vw)';
+      table.style.tableLayout = 'fixed';
+      table.style.boxSizing = 'border-box';
       const hTR = document.createElement('tr');
       hTR.innerHTML = '<th>Level</th><th colspan="4">Peculiarities</th>';
       table.appendChild(hTR);
@@ -415,34 +429,6 @@ class LevelSelector {
     explDivCreds3.innerHTML = 'Snakefall levels by various contributors<br />'
       + 'See <a target="_blank" href="https://github.com/thejoshwolfe/snakefall/wiki">github.com/thejoshwolfe/snakefall</a> for details';
     this._containerDiv.appendChild(explDivCreds3);
-
-    // Back-to-top button (left-bottom) for homepage
-    const topBtn = document.createElement('button');
-    topBtn.textContent = '↑ Top';
-    topBtn.setAttribute('class', 'lvl-back-to-top');
-    topBtn.style.position = 'fixed';
-    topBtn.style.left = '8px';
-    topBtn.style.bottom = '8px';
-    topBtn.style.zIndex = '2147483646';
-    topBtn.style.padding = '8px 10px';
-    topBtn.style.borderRadius = '6px';
-    topBtn.style.border = 'none';
-    topBtn.style.background = '#1976d2';
-    topBtn.style.color = '#fff';
-    topBtn.style.fontFamily = 'Fredoka One, sans-serif';
-    topBtn.style.fontSize = '13px';
-    topBtn.addEventListener('click', () => { try { this._parentDiv.scrollTo({top:0, left:0, behavior:'smooth'}); } catch(e){ this._parentDiv.scrollTop = 0; } });
-    // initial visibility: hide when at top
-    topBtn.style.display = (this._parentDiv.scrollTop && this._parentDiv.scrollTop > 20) ? '' : 'none';
-    // show/hide on scroll
-    this._parentDiv.addEventListener('scroll', () => {
-      try {
-        if (this._parentDiv.scrollTop > 20) topBtn.style.display = '';
-        else topBtn.style.display = 'none';
-      } catch (e) {}
-    }, { passive: true });
-    this._parentDiv.appendChild(topBtn);
-    this._scrollTopBtn = topBtn;
 
     this._menuParentDiv.innerHTML = '';
     this._menuContainerDiv = document.createElement('div');
@@ -591,7 +577,6 @@ class LevelSelector {
       (initialState, currentState, fallThrough, changeGravity, options) =>
         this.openMenu(initialState, currentState, fallThrough, changeGravity, options));
     this._returnToLevelEditor = false;
-    this._createBackButton();
   }
 
   /**
@@ -619,7 +604,6 @@ class LevelSelector {
       (initialState, currentState, fallThrough, changeGravity, options) =>
         this.openMenu(initialState, currentState, fallThrough, changeGravity, options));
     this._returnToLevelEditor = true;
-    this._createBackButton();
   }
 
   /**
@@ -682,46 +666,10 @@ class LevelSelector {
     this._parentDiv.style.display = 'block';
     if (this._cGameBoard != null) this._cGameBoard.shutDown();
     this._cGameBoard = null;
-    this._removeBackButton();
     if (this._returnToLevelEditor) {
       this.openEditor();
       this._returnToLevelEditor = false;
     }
-  }
-
-  _createBackButton() {
-    if (this._backButton) return;
-    const btn = document.createElement('button');
-    btn.textContent = '← Menu';
-    btn.style.position = 'fixed';
-    btn.style.left = '8px';
-    btn.style.top = '8px';
-    btn.style.zIndex = '2147483647';
-    btn.style.padding = '6px 10px';
-    btn.style.borderRadius = '6px';
-    btn.style.background = '#1e88e5';
-    btn.style.color = '#fff';
-    btn.style.border = 'none';
-    btn.style.fontFamily = 'Fredoka One, sans-serif';
-    btn.style.fontSize = '14px';
-    btn.style.cursor = 'pointer';
-    btn.addEventListener('click', (e) => {
-      console.log('Back button clicked');
-      this.returnToMainMenu();
-    });
-    btn.addEventListener('touchend', (e) => {
-      console.log('Back button touched');
-      e.preventDefault();
-      this.returnToMainMenu();
-    });
-    document.body.appendChild(btn);
-    this._backButton = btn;
-  }
-
-  _removeBackButton() {
-    if (!this._backButton) return;
-    try { this._backButton.remove(); } catch (e) { if (this._backButton.parentNode) this._backButton.parentNode.removeChild(this._backButton); }
-    this._backButton = null;
   }
 
   /**
@@ -732,19 +680,30 @@ class LevelSelector {
     this._width = Math.max(window.innerWidth, LS_MIN_SIZE[0]);
     this._height = Math.max(window.innerHeight, LS_MIN_SIZE[1]);
 
-    this._parentDiv.style.width = `${this._width}px`;
-    this._parentDiv.style.minWidth = `${this._width}px`;
-    this._parentDiv.style.maxWidth = `${this._width}px`;
-    this._parentDiv.style.height = `${this._height}px`;
-    this._parentDiv.style.minHeight = `${this._height}px`;
-    this._parentDiv.style.maxHeight = `${this._height}px`;
-    
-    this._menuParentDiv.style.width = `${this._width}px`;
-    this._menuParentDiv.style.minWidth = `${this._width}px`;
-    this._menuParentDiv.style.maxWidth = `${this._width}px`;
-    this._menuParentDiv.style.height = `${this._height}px`;
-    this._menuParentDiv.style.minHeight = `${this._height}px`;
-    this._menuParentDiv.style.maxHeight = `${this._height}px`;
+    // Keep overlays fixed to viewport to avoid relative drift in WebViews.
+    this._parentDiv.style.left = '0';
+    this._parentDiv.style.top = '0';
+    this._parentDiv.style.right = '0';
+    this._parentDiv.style.bottom = '0';
+    this._parentDiv.style.width = '100%';
+    this._parentDiv.style.height = '100%';
+
+    this._menuParentDiv.style.left = '0';
+    this._menuParentDiv.style.top = '0';
+    this._menuParentDiv.style.right = '0';
+    this._menuParentDiv.style.bottom = '0';
+    this._menuParentDiv.style.width = '100%';
+    this._menuParentDiv.style.height = '100%';
+
+    // Constrain inner container width and center it horizontally using CSS when available
+    if (this._containerDiv) {
+      this._containerDiv.style.marginLeft = 'auto';
+      this._containerDiv.style.marginRight = 'auto';
+      this._containerDiv.style.maxWidth = `${this._width}px`;
+      this._containerDiv.style.boxSizing = 'border-box';
+      // responsive padding to match CSS responsive rules
+      this._containerDiv.style.padding = 'clamp(12px, 6vw, 3em)';
+    }
   }
 
   /**
