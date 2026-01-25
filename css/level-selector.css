@@ -1,4 +1,12 @@
 
+/* Prevent accidental horizontal overflow on small viewports and use border-box sizing */
+html, body {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+}
+*, *::before, *::after { box-sizing: inherit; }
+
 body {
   font-size: 1.1em;
 }
@@ -185,9 +193,12 @@ div.bordered-text a:hover, div.bordered-text a:active {
 }
 
 .lvl-menu-inner-container, .lvl-sel-inner-container, .lvl-edit-inner-container, .lvl-edit-overlay-inner {
-  padding: 3em;
+  /* responsive padding to avoid forcing wide content on small screens */
+  padding: clamp(12px, 6vw, 3em);
   margin-left: auto;
   margin-right: auto;
+  box-sizing: border-box;
+  width: min(100%, 1100px);
 }
 
 .lvl-sel-outer-container, .lvl-edit-outer-container {
@@ -195,7 +206,8 @@ div.bordered-text a:hover, div.bordered-text a:active {
   background-size: cover;
   background-position: center center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
+  /* fixed attachment can cause odd layout/overflow in some mobile WebViews */
+  background-attachment: scroll;
 }
 
 a:link {
