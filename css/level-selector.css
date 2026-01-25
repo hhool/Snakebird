@@ -142,38 +142,32 @@ div.bordered-text a:hover, div.bordered-text a:active {
   border-radius: 0.5em;
   box-shadow: 0em 0.2em 0em 0em rgba(55, 117, 161, 1);
   border-collapse: collapse;
-  /* keep table within viewport on small screens */
-  width: min(100%, 92vw);
-  table-layout: fixed;
-  box-sizing: border-box;
 }
 
 .lvl-sel-collection td, .lvl-sel-collection th, .controls-table td, .controls-table th {
-  /* responsive horizontal padding to avoid forcing extra table width */
-  padding-inline: clamp(8px, 4vw, 2em);
+  padding-left: 2em;
+  padding-right: 2em;
   padding-top: 0.2em;
   padding-bottom: 0.2em;
   color: rgba(255, 255, 255, 1);
   text-shadow: 0em 0.1em 0em rgba(55, 117, 161, 1);
   text-align: center;
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
 }
 
 .lvl-sel-collection td.icon-td, .lvl-sel-collection th.icon-td {
-  padding-inline: clamp(6px, 2.5vw, 1em);
+  padding-left: 1em;
+  padding-right: 1em;
   padding-top: 0em;
   padding-bottom: 0em;
-  min-width: 2em;
+  min-width: 1.5em;
 }
 
 .lvl-sel-collection td.icon-td:last-child, .lvl-sel-collection th.icon-td:last-child {
-  padding-inline-end: clamp(8px, 4vw, 2em);
+  padding-right: 2em;
 }
 
 .lvl-sel-collection td:not(.icon-td):last-child, .lvl-sel-collection th:not(.icon-td):last-child {
-  padding-inline-end: clamp(12px, 6vw, 3em);
+  padding-right: 3em;
 }
 
 .lvl-sel-collection th, .controls-table th {
