@@ -142,6 +142,28 @@ div.bordered-text a:hover, div.bordered-text a:active {
   border-radius: 0.5em;
   box-shadow: 0em 0.2em 0em 0em rgba(55, 117, 161, 1);
   border-collapse: collapse;
+  /* keep table within viewport on small screens */
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  box-sizing: border-box;
+}
+
+/* Ensure first column takes 50% and icon columns share remaining space */
+.lvl-sel-collection th:first-child,
+.lvl-sel-collection td:first-child {
+  width: 50%;
+}
+.lvl-sel-collection th.icon-td,
+.lvl-sel-collection td.icon-td {
+  width: 12.5%;
+}
+
+/* Prevent overflow from long content and show ellipsis */
+.lvl-sel-collection td, .lvl-sel-collection th {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .lvl-sel-collection td, .lvl-sel-collection th, .controls-table td, .controls-table th {
