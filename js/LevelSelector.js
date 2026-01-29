@@ -695,7 +695,7 @@ class LevelSelector {
     btn.textContent = '← Menu';
     btn.style.position = 'fixed';
     btn.style.left = '8px';
-    btn.style.top = '8px';
+    btn.style.bottom = '8px';
     btn.style.zIndex = '2147483647';
     btn.style.padding = '6px 10px';
     btn.style.borderRadius = '6px';

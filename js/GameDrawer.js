@@ -232,6 +232,41 @@ class GameDrawer {
     document.addEventListener('pointerdown', this._docPointerDown);
     document.addEventListener('pointermove', this._docPointerMove);
     document.addEventListener('pointerup', this._docPointerUp);
+    // Document-level mouse forwarding: if mouse events are intercepted by overlays,
+    // still forward them to the canvas when the pointer is inside the canvas bounds.
+    this._docMouseDown = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.mousedown', e.clientX, e.clientY);
+        const r = this._canvas.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          this.mouseDown(e);
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docMouseMove = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.mousemove', e.clientX, e.clientY);
+        const r = this._canvas.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          this.mouseMove(e);
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    this._docMouseUp = (e) => {
+      try {
+        if (window && window.console && window.console.debug) console.debug('Doc.mouseup', e.clientX, e.clientY);
+        const r = this._canvas.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          this.mouseUp(e);
+          if (e.preventDefault) e.preventDefault();
+        }
+      } catch (ex) {}
+    };
+    document.addEventListener('mousedown', this._docMouseDown);
+    document.addEventListener('mousemove', this._docMouseMove);
+    document.addEventListener('mouseup', this._docMouseUp);
     this.draw();
   }
 
@@ -1316,5 +1351,8 @@ class GameDrawer {
     try { document.removeEventListener('pointerdown', this._docPointerDown); } catch (e) {}
     try { document.removeEventListener('pointermove', this._docPointerMove); } catch (e) {}
     try { document.removeEventListener('pointerup', this._docPointerUp); } catch (e) {}
+    try { document.removeEventListener('mousedown', this._docMouseDown); } catch (e) {}
+    try { document.removeEventListener('mousemove', this._docMouseMove); } catch (e) {}
+    try { document.removeEventListener('mouseup', this._docMouseUp); } catch (e) {}
   }
 }
